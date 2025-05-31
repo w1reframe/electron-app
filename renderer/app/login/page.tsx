@@ -108,10 +108,11 @@ export default function LoginPage() {
                   </button>
                 </div>
               </div>
-
-              <Button className="w-full bg-gradient-to-r from-blue-600 to-blue-700 font-medium text-white hover:from-blue-700 hover:to-blue-800">
-                Sign In
-              </Button>
+              <Link href="/chat">
+                <Button className="w-full bg-gradient-to-r from-blue-600 to-blue-700 font-medium text-white hover:from-blue-700 hover:to-blue-800">
+                  Sign In
+                </Button>
+              </Link>
               <div className="text-center text-sm text-slate-400">
                 {"Don't have an account? "}
                 <Link
