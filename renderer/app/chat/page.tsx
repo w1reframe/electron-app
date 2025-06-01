@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { LaTeXPreview } from './LaTeXPreview'
 import { Sidebar } from './Sidebar'
+import { PDFPreviewer } from './PDFPreviewer'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -222,21 +222,25 @@ export default function ChatbotPage() {
               <span>Characters: {documentContent.length}</span>
             </div>
           </div>
-          {/* Live LaTeX Preview (toggleable, but always takes up space) */}
+          {/* Live PDF Preview (auto-updating) */}
           <div
             className="flex flex-col min-w-0 min-h-0"
             style={{ width: '25vw', minWidth: '200px', maxWidth: '25vw', height: 'calc(100vh - 120px)', maxHeight: 'calc(100vh - 120px)', flex: '0 0 25vw', boxSizing: 'border-box', overflow: 'hidden' }}
           >
             <div className="flex items-center mb-1">
-              <label className="text-xs text-slate-400">Live Preview</label>
+              <label className="text-xs text-slate-400">Live PDF Preview</label>
             </div>
             <div
               className="flex-1 min-h-0 min-w-0 rounded border border-slate-700 bg-[#181c20] font-mono text-base leading-relaxed text-slate-100 overflow-y-auto flex items-center justify-center"
               style={{ height: '100%', maxHeight: '100%' }}
             >
-              <div className="w-full h-full"><LaTeXPreview value={documentContent} /></div>
+              <PDFPreviewer latex={documentContent} />
             </div>
           </div>
+
+
+
+
         </div>
 
         {/* Editor Footer (global) */}
