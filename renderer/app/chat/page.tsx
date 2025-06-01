@@ -1,6 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
+import { LaTeXPreview } from './LaTeXPreview'
+import { Sidebar } from './Sidebar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -58,6 +60,18 @@ export default function ChatbotPage() {
   const [documentContent, setDocumentContent] = useState(
     'Start typing your document here...\n\nI can help you with:\n• Grammar and style improvements\n• Content suggestions\n• Formatting assistance\n• Research and fact-checking'
   )
+  // Preview toggle for syntax highlighting
+  const [showPreview, setShowPreview] = useState(false)
+  const codeRef = useRef<HTMLPreElement>(null)
+  // Prism highlight effect
+  useEffect(() => {
+    if (showPreview && codeRef.current) {
+      import('./libs/prism-js/prism.js').then(() => {
+        // @ts-ignore
+        if (window.Prism) window.Prism.highlightAllUnder(codeRef.current)
+      })
+    }
+  }, [showPreview, documentContent])
 
   const [chatSessions] = useState<ChatSession[]>([
     {
@@ -84,7 +98,8 @@ export default function ChatbotPage() {
       lastMessage: 'Professional tone needed',
       timestamp: new Date(Date.now() - 172800000)
     }
-  ])
+  ]);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const handleSendMessage = () => {
     if (!currentMessage.trim()) return
@@ -113,79 +128,24 @@ export default function ChatbotPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-black via-slate-900 to-black">
-      {/* Left Sidebar - Dashboard */}
-      <div className="flex w-80 flex-col border-r border-slate-700 bg-slate-800/50 backdrop-blur-sm">
-        {/* Header */}
-        <div className="border-b border-slate-700 p-4">
-          <div className="mb-4 flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500">
-              <span className="text-sm font-bold text-white">W</span>
-            </div>
-            <span className="text-lg font-semibold text-white">WireFrame</span>
-          </div>
+    <>
+      {/* Prism and mainWindow styles - import in _app.tsx or globals.css for Next.js best practice */}
+      {/* <Head>
+        <link rel="stylesheet" href="/chat/libs/prism-js/prism.css" />
+        <link rel="stylesheet" href="/chat/libs/prism-js/prism-one-dark.css" />
+        <link rel="stylesheet" href="/chat/mainWindow/mainStyles.css" />
+        <link rel="stylesheet" href="/chat/../sharedStyles.css" />
+      </Head> */}
+      <div className="flex min-h-screen bg-gradient-to-br from-black via-slate-900 to-black">
+      {/* Left Sidebar - Dashboard (Collapsible) */}
+      <Sidebar
+        chatSessions={chatSessions}
+        collapsed={sidebarCollapsed}
+        onCollapse={() => setSidebarCollapsed(c => !c)}
+      />
 
-          <Button className="w-full bg-blue-600 text-white hover:bg-blue-700">
-            <Plus className="mr-2 h-4 w-4" />
-            New Document
-          </Button>
-        </div>
 
-        {/* Search */}
-        <div className="border-b border-slate-700 p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-slate-400" />
-            <Input
-              placeholder="Search Documents"
-              className="border-slate-600 bg-slate-700/50 pl-10 text-white placeholder-slate-400"
-            />
-          </div>
-        </div>
-
-        {/* Previous Documents */}
-        <div className="flex-1 p-4">
-          <h3 className="mb-3 text-sm font-medium text-slate-300">
-            Recent Documents
-          </h3>
-          <ScrollArea className="h-full">
-            <div className="space-y-2">
-              {chatSessions.map(session => (
-                <div
-                  key={session.id}
-                  className="cursor-pointer rounded-lg bg-slate-700/30 p-3 transition-colors hover:bg-slate-700/50">
-                  <h4 className="truncate text-sm font-medium text-white">
-                    {session.title}
-                  </h4>
-                  <p className="mt-1 truncate text-xs text-slate-400">
-                    {session.lastMessage}
-                  </p>
-                  <span className="text-xs text-slate-500">
-                    {session.timestamp.toLocaleDateString()}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
-        </div>
-
-        {/* User Profile */}
-        <div className="border-t border-slate-700 p-4">
-          <div className="flex items-center gap-3">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src="/placeholder.svg?height=32&width=32" />
-              <AvatarFallback className="bg-blue-600 text-white">
-                <User className="h-4 w-4" />
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-white">John Doe</p>
-              <p className="text-xs text-slate-400">Premium Writer</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Middle Section - Text Editor */}
+      {/* Middle Section - Editor + Live Preview */}
       <div className="flex flex-1 flex-col bg-slate-800/30 backdrop-blur-sm">
         {/* Editor Toolbar */}
         <div className="border-b border-slate-700 bg-slate-800/50 p-4">
@@ -212,118 +172,76 @@ export default function ChatbotPage() {
           {/* Formatting Toolbar */}
           <div className="flex flex-wrap items-center gap-1">
             <div className="mr-4 flex gap-1">
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-slate-400 hover:bg-slate-700 hover:text-white">
-                <Bold className="h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-slate-400 hover:bg-slate-700 hover:text-white">
-                <Italic className="h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-slate-400 hover:bg-slate-700 hover:text-white">
-                <Underline className="h-4 w-4" />
-              </Button>
+              <Button size="sm" variant="ghost" className="text-slate-400 hover:bg-slate-700 hover:text-white"><Bold className="h-4 w-4" /></Button>
+              <Button size="sm" variant="ghost" className="text-slate-400 hover:bg-slate-700 hover:text-white"><Italic className="h-4 w-4" /></Button>
+              <Button size="sm" variant="ghost" className="text-slate-400 hover:bg-slate-700 hover:text-white"><Underline className="h-4 w-4" /></Button>
             </div>
-
             <div className="mr-4 flex gap-1">
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-slate-400 hover:bg-slate-700 hover:text-white">
-                <AlignLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-slate-400 hover:bg-slate-700 hover:text-white">
-                <AlignCenter className="h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-slate-400 hover:bg-slate-700 hover:text-white">
-                <AlignRight className="h-4 w-4" />
-              </Button>
+              <Button size="sm" variant="ghost" className="text-slate-400 hover:bg-slate-700 hover:text-white"><AlignLeft className="h-4 w-4" /></Button>
+              <Button size="sm" variant="ghost" className="text-slate-400 hover:bg-slate-700 hover:text-white"><AlignCenter className="h-4 w-4" /></Button>
+              <Button size="sm" variant="ghost" className="text-slate-400 hover:bg-slate-700 hover:text-white"><AlignRight className="h-4 w-4" /></Button>
             </div>
-
             <div className="mr-4 flex gap-1">
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-slate-400 hover:bg-slate-700 hover:text-white">
-                <List className="h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-slate-400 hover:bg-slate-700 hover:text-white">
-                <ListOrdered className="h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-slate-400 hover:bg-slate-700 hover:text-white">
-                <Quote className="h-4 w-4" />
-              </Button>
+              <Button size="sm" variant="ghost" className="text-slate-400 hover:bg-slate-700 hover:text-white"><List className="h-4 w-4" /></Button>
+              <Button size="sm" variant="ghost" className="text-slate-400 hover:bg-slate-700 hover:text-white"><ListOrdered className="h-4 w-4" /></Button>
+              <Button size="sm" variant="ghost" className="text-slate-400 hover:bg-slate-700 hover:text-white"><Quote className="h-4 w-4" /></Button>
             </div>
-
             <div className="flex gap-1">
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-slate-400 hover:bg-slate-700 hover:text-white">
-                <Link className="h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-slate-400 hover:bg-slate-700 hover:text-white">
-                <ImageIcon className="h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-slate-400 hover:bg-slate-700 hover:text-white">
-                <Code className="h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-slate-400 hover:bg-slate-700 hover:text-white">
-                <Upload className="h-4 w-4" />
-              </Button>
+              <Button size="sm" variant="ghost" className="text-slate-400 hover:bg-slate-700 hover:text-white"><Link className="h-4 w-4" /></Button>
+              <Button size="sm" variant="ghost" className="text-slate-400 hover:bg-slate-700 hover:text-white"><ImageIcon className="h-4 w-4" /></Button>
+              <Button size="sm" variant="ghost" className="text-slate-400 hover:bg-slate-700 hover:text-white"><Code className="h-4 w-4" /></Button>
+              <Button size="sm" variant="ghost" className="text-slate-400 hover:bg-slate-700 hover:text-white"><Upload className="h-4 w-4" /></Button>
             </div>
           </div>
         </div>
 
-        {/* Text Editor Area */}
-        <div className="flex-1 p-6">
-          <Textarea
-            value={documentContent}
-            onChange={e => setDocumentContent(e.target.value)}
-            className="h-full min-h-[500px] w-full resize-none border-slate-300 bg-white/95 font-mono text-base leading-relaxed text-slate-900"
-            placeholder="Start writing your document here..."
-          />
+        {/* Editor + Preview Side by Side with Increased Height and Editor Footer */}
+        {/* Main Content Area: Editor + Preview, robust flex, no overflow */}
+        <div className="flex flex-1 min-h-0 min-w-0 flex-row gap-4 p-6">
+          {/* Text Editor - locked width and height */}
+          <div
+            className="flex flex-col min-w-0 min-h-0"
+            style={{ width: '25vw', minWidth: '200px', maxWidth: '25vw', height: 'calc(100vh - 120px)', maxHeight: 'calc(100vh - 120px)', flex: '0 0 25vw', boxSizing: 'border-box', overflow: 'hidden' }}
+          >
+            <label className="mb-1 text-xs text-slate-400">Editor</label>
+            <div
+              className="flex-1 min-h-0 rounded border border-slate-300 bg-white/95 overflow-y-auto"
+              style={{ height: '100%', maxHeight: '100%' }}
+            >
+              <Textarea
+                value={documentContent}
+                onChange={e => setDocumentContent(e.target.value)}
+                className="h-full min-h-0 resize-none border-0 bg-transparent font-mono text-base leading-relaxed text-slate-900 focus:ring-0 focus:outline-none"
+                placeholder="Start writing your document here..."
+                style={{ minHeight: 0, height: '100%', maxHeight: '100%' }}
+              />
+            </div>
+            {/* Editor Footer: Words and Characters */}
+            <div className="flex items-center justify-between text-xs text-slate-400 mt-1 px-1">
+              <span>Words: {documentContent.trim().length === 0 ? 0 : documentContent.trim().split(/\s+/).length}</span>
+              <span>Characters: {documentContent.length}</span>
+            </div>
+          </div>
+          {/* Live LaTeX Preview (toggleable, but always takes up space) */}
+          <div
+            className="flex flex-col min-w-0 min-h-0"
+            style={{ width: '25vw', minWidth: '200px', maxWidth: '25vw', height: 'calc(100vh - 120px)', maxHeight: 'calc(100vh - 120px)', flex: '0 0 25vw', boxSizing: 'border-box', overflow: 'hidden' }}
+          >
+            <div className="flex items-center mb-1">
+              <label className="text-xs text-slate-400">Live Preview</label>
+            </div>
+            <div
+              className="flex-1 min-h-0 min-w-0 rounded border border-slate-700 bg-[#181c20] font-mono text-base leading-relaxed text-slate-100 overflow-y-auto flex items-center justify-center"
+              style={{ height: '100%', maxHeight: '100%' }}
+            >
+              <div className="w-full h-full"><LaTeXPreview value={documentContent} /></div>
+            </div>
+          </div>
         </div>
 
-        {/* Editor Footer */}
+        {/* Editor Footer (global) */}
         <div className="border-t border-slate-700 bg-slate-800/50 p-4">
-          <div className="flex items-center justify-between text-sm text-slate-400">
-            <span>
-              Words:{' '}
-              {
-                documentContent.split(/\s+/).filter(word => word.length > 0)
-                  .length
-              }
-            </span>
-            <span>Characters: {documentContent.length}</span>
+          <div className="flex items-center justify-end text-xs text-slate-400">
             <span>Last saved: Just now</span>
           </div>
         </div>
@@ -429,7 +347,8 @@ export default function ChatbotPage() {
             </Button>
           </div>
         </div>
-      </div>
     </div>
-  )
+    </div>
+    </>
+  );
 }
